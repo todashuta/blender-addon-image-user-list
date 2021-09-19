@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 2, 0),
+    "version": (1, 2, 1),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -101,8 +101,25 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
         for m in bpy.data.materials:
             if not m.use_nodes:
                 continue
-            if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
-                layout.label(icon="MATERIAL", text=m.name, translate=False)
+            ns = [n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]
+            #print(ns)
+            len_ = len(ns)
+            if len_ > 0:
+                layout.label(icon="MATERIAL", text=f"{m.name}", translate=False)
+                for n in sorted(ns, key=lambda it: it.name):
+                    num_color_links = len(n.outputs['Color'].links)
+                    num_alpha_links = len(n.outputs['Alpha'].links)
+                    if num_color_links > 0 or num_alpha_links > 0:
+                        icon = "LINKED"
+                        s = f" (Col:{num_color_links}, Alp:{num_alpha_links})"
+                    else:
+                        icon = "UNLINKED"
+                        s = "" #" (Not Connected)"
+                    split = layout.split(factor=0.04)
+                    split.column()
+                    split = split.split(factor=0.96)
+                    col = split.column()
+                    col.label(icon=icon, text=f"{n.name}{s}", translate=False)
 
 
 classes = [
