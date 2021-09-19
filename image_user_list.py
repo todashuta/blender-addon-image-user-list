@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 3, 0),
+    "version": (1, 3, 1),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -55,6 +55,7 @@ class IMAGE_USER_LIST_OT_set_clipboard(bpy.types.Operator):
     bl_idname = "image.image_user_list_set_clipboard"
     bl_label = "Copy"
     bl_description = "Copy Name to Clipboard"
+    bl_options = {"INTERNAL"}
 
     content: bpy.props.StringProperty(default="", options={"HIDDEN"})
 
@@ -115,6 +116,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
         #layout.operator(IMAGE_USER_LIST_OT_search.bl_idname)
         #layout.separator()
         layout.label(text="Materials:")
+        found = False
         for m in bpy.data.materials:
             if not m.use_nodes:
                 continue
@@ -122,6 +124,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
             #print(ns)
             len_ = len(ns)
             if len_ > 0:
+                found = True
                 split = layout.split(factor=0.8)
                 split.label(icon="MATERIAL", text=f"{m.name}", translate=False)
                 split.operator(IMAGE_USER_LIST_OT_set_clipboard.bl_idname, text="", icon="COPY_ID").content = m.name
@@ -137,6 +140,8 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                     split = layout.split(factor=0.04)
                     split.label(text="")
                     split.label(icon=icon, text=f"{n.name}{s}", translate=False)
+        if not found:
+            layout.label(icon="INFO", text="No Items.")
 
 
 classes = [
