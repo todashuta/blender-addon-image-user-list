@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 3, 1),
+    "version": (1, 3, 2),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -128,6 +128,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                 split = layout.split(factor=0.8)
                 split.label(icon="MATERIAL", text=f"{m.name}", translate=False)
                 split.operator(IMAGE_USER_LIST_OT_set_clipboard.bl_idname, text="", icon="COPY_ID").content = m.name
+                col = layout.column(align=True)
                 for n in sorted(ns, key=lambda it: it.name):
                     num_color_links = len(n.outputs['Color'].links)
                     num_alpha_links = len(n.outputs['Alpha'].links)
@@ -137,7 +138,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                     else:
                         icon = "UNLINKED"
                         s = "" #" (Not Connected)"
-                    split = layout.split(factor=0.04)
+                    split = col.split(factor=0.04)
                     split.label(text="")
                     split.label(icon=icon, text=f"{n.name}{s}", translate=False)
         if not found:
