@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 2, 1),
+    "version": (1, 3, 0),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -34,20 +34,37 @@ bl_info = {
 }
 
 
-class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
-    bl_idname = "image.image_user_list_search"
-    bl_label = "Search This Name in Outliner"
+#class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
+#    bl_idname = "image.image_user_list_search"
+#    bl_label = "Search This Name in Outliner"
+#
+#    @classmethod
+#    def poll(cls, context):
+#        return context.scene.image_user_list_search is not None
+#
+#    def execute(self, context):
+#        for area in context.screen.areas:
+#            if area.type == "OUTLINER":
+#                for space in area.spaces:
+#                    if space.type == "OUTLINER" and space.display_mode == "LIBRARIES":
+#                        space.filter_text = context.scene.image_user_list_search.name
+#        return {"FINISHED"}
+
+
+class IMAGE_USER_LIST_OT_set_clipboard(bpy.types.Operator):
+    bl_idname = "image.image_user_list_set_clipboard"
+    bl_label = "Copy"
+    bl_description = "Copy Name to Clipboard"
+
+    content: bpy.props.StringProperty(default="", options={"HIDDEN"})
 
     @classmethod
     def poll(cls, context):
-        return context.scene.image_user_list_search is not None
+        return True
 
     def execute(self, context):
-        for area in context.screen.areas:
-            if area.type == "OUTLINER":
-                for space in area.spaces:
-                    if space.type == "OUTLINER" and space.display_mode == "LIBRARIES":
-                        space.filter_text = context.scene.image_user_list_search.name
+        context.window_manager.clipboard = self.content
+
         return {"FINISHED"}
 
 
@@ -66,20 +83,20 @@ class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
 #    return items
 
 
-def filter_image_user_materials(self, mat):
-    context = bpy.context
-    if not hasattr(context.space_data, "image"):
-        return False
-    if context.space_data.image is None:
-        return False
-    image = context.space_data.image
-    users = []
-    for m in bpy.data.materials:
-        if not m.use_nodes:
-            continue
-        if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
-            users.append(m)
-    return mat.name in [u.name for u in users]
+#def filter_image_user_materials(self, mat):
+#    context = bpy.context
+#    if not hasattr(context.space_data, "image"):
+#        return False
+#    if context.space_data.image is None:
+#        return False
+#    image = context.space_data.image
+#    users = []
+#    for m in bpy.data.materials:
+#        if not m.use_nodes:
+#            continue
+#        if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
+#            users.append(m)
+#    return mat.name in [u.name for u in users]
 
 
 class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
@@ -94,9 +111,9 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                 return
         image = context.space_data.image
         layout = self.layout
-        layout.prop(context.scene, "image_user_list_search", text="")
-        layout.operator(IMAGE_USER_LIST_OT_search.bl_idname)
-        layout.separator()
+        #layout.prop(context.scene, "image_user_list_search", text="")
+        #layout.operator(IMAGE_USER_LIST_OT_search.bl_idname)
+        #layout.separator()
         layout.label(text="Materials:")
         for m in bpy.data.materials:
             if not m.use_nodes:
@@ -105,7 +122,9 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
             #print(ns)
             len_ = len(ns)
             if len_ > 0:
-                layout.label(icon="MATERIAL", text=f"{m.name}", translate=False)
+                split = layout.split(factor=0.8)
+                split.label(icon="MATERIAL", text=f"{m.name}", translate=False)
+                split.operator(IMAGE_USER_LIST_OT_set_clipboard.bl_idname, text="", icon="COPY_ID").content = m.name
                 for n in sorted(ns, key=lambda it: it.name):
                     num_color_links = len(n.outputs['Color'].links)
                     num_alpha_links = len(n.outputs['Alpha'].links)
@@ -116,31 +135,30 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                         icon = "UNLINKED"
                         s = "" #" (Not Connected)"
                     split = layout.split(factor=0.04)
-                    split.column()
-                    split = split.split(factor=0.96)
-                    col = split.column()
-                    col.label(icon=icon, text=f"{n.name}{s}", translate=False)
+                    split.label(text="")
+                    split.label(icon=icon, text=f"{n.name}{s}", translate=False)
 
 
 classes = [
-        IMAGE_USER_LIST_OT_search,
+        IMAGE_USER_LIST_OT_set_clipboard,
+        #IMAGE_USER_LIST_OT_search,
         IMAGE_USER_LIST_PT_panel,
 ]
 
 
 def register():
-    bpy.types.Scene.image_user_list_search = bpy.props.PointerProperty(
-            type=bpy.types.Material,
-            poll=filter_image_user_materials
-    )
+    #bpy.types.Scene.image_user_list_search = bpy.props.PointerProperty(
+    #        type=bpy.types.Material,
+    #        poll=filter_image_user_materials
+    #)
 
     for c in classes:
         bpy.utils.register_class(c)
 
 
 def unregister():
-    if hasattr(bpy.types.Scene, "image_user_list_search"):
-        del bpy.types.Scene.image_user_list_search
+    #if hasattr(bpy.types.Scene, "image_user_list_search"):
+    #    del bpy.types.Scene.image_user_list_search
 
     for c in classes:
         bpy.utils.unregister_class(c)
