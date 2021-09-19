@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 3, 2),
+    "version": (1, 4, 0),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -34,21 +34,28 @@ bl_info = {
 }
 
 
-#class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
-#    bl_idname = "image.image_user_list_search"
-#    bl_label = "Search This Name in Outliner"
-#
-#    @classmethod
-#    def poll(cls, context):
-#        return context.scene.image_user_list_search is not None
-#
-#    def execute(self, context):
-#        for area in context.screen.areas:
-#            if area.type == "OUTLINER":
-#                for space in area.spaces:
-#                    if space.type == "OUTLINER" and space.display_mode == "LIBRARIES":
-#                        space.filter_text = context.scene.image_user_list_search.name
-#        return {"FINISHED"}
+class IMAGE_USER_LIST_OT_search_in_outliner(bpy.types.Operator):
+    bl_idname = "image.image_user_list_search_in_outliner"
+    bl_label = "Search"
+    bl_description = "Search This Name in Outliner"
+    bl_options = {"INTERNAL"}
+
+    filter_text: bpy.props.StringProperty(default="", options={"HIDDEN"})
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        for area in context.screen.areas:
+            if area.type == "OUTLINER":
+                for space in area.spaces:
+                    if space.type == "OUTLINER" and space.display_mode == "VIEW_LAYER":
+                        space.filter_text = self.filter_text
+                        if not space.use_filter_complete:
+                            space.use_filter_complete = True
+                            self.report({"INFO"}, "Filter `Exact Match' Enabled.")
+        return {"FINISHED"}
 
 
 class IMAGE_USER_LIST_OT_set_clipboard(bpy.types.Operator):
@@ -125,9 +132,10 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
             len_ = len(ns)
             if len_ > 0:
                 found = True
-                split = layout.split(factor=0.8)
+                split = layout.split(factor=0.7)
                 split.label(icon="MATERIAL", text=f"{m.name}", translate=False)
                 split.operator(IMAGE_USER_LIST_OT_set_clipboard.bl_idname, text="", icon="COPY_ID").content = m.name
+                split.operator(IMAGE_USER_LIST_OT_search_in_outliner.bl_idname, text="", icon="VIEWZOOM").filter_text = m.name
                 col = layout.column(align=True)
                 for n in sorted(ns, key=lambda it: it.name):
                     num_color_links = len(n.outputs['Color'].links)
@@ -146,8 +154,8 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
 
 
 classes = [
+        IMAGE_USER_LIST_OT_search_in_outliner,
         IMAGE_USER_LIST_OT_set_clipboard,
-        #IMAGE_USER_LIST_OT_search,
         IMAGE_USER_LIST_PT_panel,
 ]
 
