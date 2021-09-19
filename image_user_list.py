@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -32,6 +32,38 @@ bl_info = {
     "tracker_url": "",
     "category": "Image"
 }
+
+
+class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
+    bl_idname = "image.image_user_list_search"
+    bl_label = "Search This Name in Outliner"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.image_user_list_matname != ""
+
+    def execute(self, context):
+        for area in context.screen.areas:
+            if area.type == "OUTLINER":
+                for space in area.spaces:
+                    if space.type == "OUTLINER" and space.display_mode == "LIBRARIES":
+                        space.filter_text = context.scene.image_user_list_matname
+        return {"FINISHED"}
+
+
+def get_material_list_callback(scene, context):
+    items = []
+    if not hasattr(context.space_data, "image"):
+        return items
+    if context.space_data.image is None:
+        return items
+    image = context.space_data.image
+    for m in bpy.data.materials:
+        if not m.use_nodes:
+            continue
+        if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
+            items.append((m.name, m.name, ""))
+    return items
 
 
 class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
@@ -46,6 +78,10 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                 return
         image = context.space_data.image
         layout = self.layout
+        layout.prop(context.scene, "image_user_list_matname", text="")
+        layout.operator(IMAGE_USER_LIST_OT_search.bl_idname)
+        layout.separator()
+        layout.label(text="Materials:")
         for m in bpy.data.materials:
             if not m.use_nodes:
                 continue
@@ -54,16 +90,23 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
 
 
 classes = [
-    IMAGE_USER_LIST_PT_panel,
+        IMAGE_USER_LIST_OT_search,
+        IMAGE_USER_LIST_PT_panel,
 ]
 
 
 def register():
+    bpy.types.Scene.image_user_list_matname = bpy.props.EnumProperty(
+            name="Material Name", items=get_material_list_callback)
+
     for c in classes:
         bpy.utils.register_class(c)
 
 
 def unregister():
+    if hasattr(bpy.types.Scene, "image_user_list_matname"):
+        del bpy.types.Scene.image_user_list_matname
+
     for c in classes:
         bpy.utils.unregister_class(c)
 
