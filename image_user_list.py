@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 1, 0),
+    "version": (1, 2, 0),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -40,30 +40,46 @@ class IMAGE_USER_LIST_OT_search(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.image_user_list_matname != ""
+        return context.scene.image_user_list_search is not None
 
     def execute(self, context):
         for area in context.screen.areas:
             if area.type == "OUTLINER":
                 for space in area.spaces:
                     if space.type == "OUTLINER" and space.display_mode == "LIBRARIES":
-                        space.filter_text = context.scene.image_user_list_matname
+                        space.filter_text = context.scene.image_user_list_search.name
         return {"FINISHED"}
 
 
-def get_material_list_callback(scene, context):
-    items = []
+#def get_material_list_callback(scene, context):
+#    items = []
+#    if not hasattr(context.space_data, "image"):
+#        return items
+#    if context.space_data.image is None:
+#        return items
+#    image = context.space_data.image
+#    for m in bpy.data.materials:
+#        if not m.use_nodes:
+#            continue
+#        if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
+#            items.append((m.name, m.name, ""))
+#    return items
+
+
+def filter_image_user_materials(self, mat):
+    context = bpy.context
     if not hasattr(context.space_data, "image"):
-        return items
+        return False
     if context.space_data.image is None:
-        return items
+        return False
     image = context.space_data.image
+    users = []
     for m in bpy.data.materials:
         if not m.use_nodes:
             continue
         if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
-            items.append((m.name, m.name, ""))
-    return items
+            users.append(m)
+    return mat.name in [u.name for u in users]
 
 
 class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
@@ -78,7 +94,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
                 return
         image = context.space_data.image
         layout = self.layout
-        layout.prop(context.scene, "image_user_list_matname", text="")
+        layout.prop(context.scene, "image_user_list_search", text="")
         layout.operator(IMAGE_USER_LIST_OT_search.bl_idname)
         layout.separator()
         layout.label(text="Materials:")
@@ -86,7 +102,7 @@ class IMAGE_USER_LIST_PT_panel(bpy.types.Panel):
             if not m.use_nodes:
                 continue
             if len([n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image == image]) > 0:
-                layout.label(icon="MATERIAL", text=m.name)
+                layout.label(icon="MATERIAL", text=m.name, translate=False)
 
 
 classes = [
@@ -96,16 +112,18 @@ classes = [
 
 
 def register():
-    bpy.types.Scene.image_user_list_matname = bpy.props.EnumProperty(
-            name="Material Name", items=get_material_list_callback)
+    bpy.types.Scene.image_user_list_search = bpy.props.PointerProperty(
+            type=bpy.types.Material,
+            poll=filter_image_user_materials
+    )
 
     for c in classes:
         bpy.utils.register_class(c)
 
 
 def unregister():
-    if hasattr(bpy.types.Scene, "image_user_list_matname"):
-        del bpy.types.Scene.image_user_list_matname
+    if hasattr(bpy.types.Scene, "image_user_list_search"):
+        del bpy.types.Scene.image_user_list_search
 
     for c in classes:
         bpy.utils.unregister_class(c)
