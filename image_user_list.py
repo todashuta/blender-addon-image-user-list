@@ -23,7 +23,7 @@ import bpy
 bl_info = {
     "name": "Image User List",
     "author": "todashuta",
-    "version": (1, 4, 0),
+    "version": (1, 4, 1),
     "blender": (2, 80, 0),
     "location": "Image Editor > Sidebar > Image > Image User List",
     "description": "",
@@ -31,6 +31,24 @@ bl_info = {
     "wiki_url": "",
     "tracker_url": "",
     "category": "Image"
+}
+
+
+translation_dict = {
+        "en_US": {
+            ("Operator", "Search"): "Search",
+            ("*", "Search This Name in Outliner"): "Search This Name in Outliner",
+            ("*", "Filter `Exact Match' Enabled."): "Filter `Exact Match' Enabled.",
+            ("*", "Copy Name to Clipboard"): "Copy Name to Clipboard",
+            ("*", "No Items."): "No Items.",
+        },
+        "ja_JP": {
+            ("Operator", "Search"): "検索",
+            ("*", "Search This Name in Outliner"): "アウトライナーでこの名前を検索します",
+            ("*", "Filter `Exact Match' Enabled."): "「完全に一致」をオンにしました。",
+            ("*", "Copy Name to Clipboard"): "名前をクリップボードにコピーします",
+            ("*", "No Items."): "該当なし",
+        },
 }
 
 
@@ -169,10 +187,14 @@ def register():
     for c in classes:
         bpy.utils.register_class(c)
 
+    bpy.app.translations.register(__name__, translation_dict)
+
 
 def unregister():
     #if hasattr(bpy.types.Scene, "image_user_list_search"):
     #    del bpy.types.Scene.image_user_list_search
+
+    bpy.app.translations.unregister(__name__)
 
     for c in classes:
         bpy.utils.unregister_class(c)
